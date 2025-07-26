@@ -21,7 +21,7 @@ app.get('/transcript', async (req, res) => {
   }
 
   try {
-    const url = \`https://youtube.googleapis.com/youtube/v3/captions?videoId=\${videoId}&key=\${apiKey}\`;
+    const url = `https://youtube.googleapis.com/youtube/v3/captions?videoId=${videoId}&key=${apiKey}`;
     const response = await axios.get(url);
     res.json(response.data);
   } catch (err) {
