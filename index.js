@@ -15,10 +15,11 @@ app.get("/transcript", async (req, res) => {
   try {
     const transcript = await getTranscript(videoId);
     res.json(transcript);
-} catch (error) {
-  console.error("Erro ao obter transcrição completa:", error);
-  res.status(500).json({ error: "Erro ao obter transcrição." });
-}
+  } catch (error) {
+    console.error("Erro ao obter transcrição completa:", error);
+    res.status(500).json({ error: "Erro ao obter transcrição." });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
