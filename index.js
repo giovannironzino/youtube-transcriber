@@ -1,51 +1,61 @@
 const express = require("express");
-const cors = require("cors");
-const { getTranscript } = require("youtube-transcript");
+const transcript = require("youtube-transcript");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
-app.use(cors());
+const port = process.env.PORT || 10000;
+
+// Limite de 30 requisições por IP a cada 15 minutos
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: {
+    error: "Muitas requisições. Tente novamente mais tarde."
+  }
+});
+
+app.use(limiter);
+
+// Função de validação básica para ID do YouTube
+function isValidVideoId(id) {
+  const regex = /^[a-zA-Z0-9_-]{11}$/;
+  return regex.test(id);
+}
 
 app.get("/transcript", async (req, res) => {
   const videoId = req.query.videoId;
 
+  // Validação do ID
   if (!videoId) {
-    return res.status(400).json({
-      error: "Parâmetro 'videoId' é obrigatório.",
-      code: "MISSING_VIDEO_ID"
-    });
+    return res.status(400).json({ error: "Parâmetro 'videoId' ausente." });
+  }
+
+  if (!isValidVideoId(videoId)) {
+    return res.status(400).json({ error: "Formato de 'videoId' inválido." });
   }
 
   try {
-    const transcript = await getTranscript(videoId);
-    res.json({ transcript });
+    const transcriptData = await transcript.getTranscript(videoId);
+    res.json({ transcript: transcriptData });
   } catch (error) {
-    const errorDetails = {
-      name: error.name || "UnknownError",
-      message: error.message || "Erro desconhecido",
-      stack: error.stack || null,
-      code: error.code || null,
-      cause: error.cause || null,
+    // Log no servidor (não enviado ao cliente)
+    console.error("Erro ao obter transcrição:", {
       videoId,
-      timestamp: new Date().toISOString()
-    };
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
 
-    console.error("🔴 Erro ao obter transcrição:", errorDetails);
-
+    // Mensagem genérica ao cliente
     res.status(500).json({
       error: "Erro interno ao tentar obter a transcrição.",
       code: "TRANSCRIPTION_FAILURE",
-      videoId: errorDetails.videoId,
-      timestamp: errorDetails.timestamp,
-      debug: {
-        name: errorDetails.name,
-        message: errorDetails.message,
-        code: errorDetails.code
-      }
+      videoId,
+      timestamp: new Date().toISOString()
     });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Servidor rodando na porta ${PORT}`);
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });
