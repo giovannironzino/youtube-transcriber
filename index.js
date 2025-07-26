@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { getTranscript } = require("youtube-transcript");
+const getTranscript = require("youtube-transcript").default;
 
 const app = express();
 app.use(cors());
